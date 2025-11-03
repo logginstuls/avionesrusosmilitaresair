@@ -5,6 +5,10 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
+
+// ======================================================
+// 📦 SERVER REALIZADO POR PABLITO TU PAPA 4EVER
+// ======================================================
 // ======================================================
 // 📦 Almacenamiento en memoria (simulando base de datos)
 // ======================================================
@@ -66,6 +70,13 @@ app.get("/api/sessions", (req, res) => {
 // ======================================================
 app.get("/ping", (req, res) => {
   res.send("pong");
+});
+// Permitir GET temporal para debug
+app.get("/api/messages", (req, res) => {
+  res.json({
+    success: true,
+    message: "Usa POST con sessionId para obtener mensajes específicos."
+  });
 });
 
 // ======================================================
