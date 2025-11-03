@@ -5,18 +5,23 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-let messages = [];
+// ======================================================
+// 📦 Almacenamiento en memoria (simulando base de datos)
+// ======================================================
+let sessions = {};  // 🔥 ESTA VARIABLE ES LA CLAVE
 let lastId = 0;
 
-// 🟢 Endpoint para recibir mensajes del cliente
-// ✅ Enviar mensaje (de cliente o agente)
+// ======================================================
+// 📩 Enviar mensaje (cliente o asesor)
+// ======================================================
 app.post("/api/send", (req, res) => {
   const { sender, text, sessionId } = req.body;
+
   if (!sender || !text || !sessionId) {
     return res.status(400).json({ success: false, message: "Faltan datos o sessionId" });
   }
 
-  // Si la sesión no existe, se crea
+  // Crear sesión si no existe
   if (!sessions[sessionId]) sessions[sessionId] = [];
 
   const newMessage = {
@@ -29,44 +34,57 @@ app.post("/api/send", (req, res) => {
   sessions[sessionId].push(newMessage);
   console.log(`💬 [${sessionId}] ${sender}: ${text}`);
 
-  res.json({ success: true });
+  return res.json({ success: true });
 });
 
-// ✅ Obtener mensajes de una sesión específica
+// ======================================================
+// 💬 Obtener mensajes de una sesión específica
+// ======================================================
 app.post("/api/messages", (req, res) => {
   const { sessionId } = req.body;
-  if (!sessionId) return res.status(400).json({ success: false, message: "Falta sessionId" });
+  if (!sessionId) {
+    return res.status(400).json({ success: false, message: "Falta sessionId" });
+  }
 
   const chatMessages = sessions[sessionId] || [];
-  res.json({ success: true, messages: chatMessages });
+  return res.json({ success: true, messages: chatMessages });
 });
 
-
-// 🟢 Endpoint para obtener todos los mensajes
-app.post("/api/messages", (req, res) => {
-  const { sessionId } = req.body;
-  if (!sessionId) return res.status(400).json({ success: false, message: "Falta sessionId" });
-
-  const chatMessages = sessions[sessionId] || [];
-  res.json({ success: true, messages: chatMessages });
+// ======================================================
+// 🧩 Obtener lista de sesiones activas (opcional para panel futuro)
+// ======================================================
+app.get("/api/sessions", (req, res) => {
+  const list = Object.keys(sessions).map(id => ({
+    id,
+    messageCount: sessions[id].length,
+  }));
+  return res.json({ success: true, sessions: list });
 });
 
+// ======================================================
 // 🟢 Endpoint para evitar que Render se duerma
+// ======================================================
 app.get("/ping", (req, res) => {
   res.send("pong");
 });
 
+// ======================================================
+// 🚀 Inicializar servidor
+// ======================================================
 const PORT = process.env.PORT || 10000;
 app.listen(PORT, () => console.log(`🚀 Servidor activo en puerto ${PORT}`));
-// 🕐 Mantener Render despierto (polling cada 4 minutos)
+
+// ======================================================
+// 🔁 Mantener Render despierto (cada 4 minutos)
+// ======================================================
 if (process.env.RENDER === "true") {
   setInterval(async () => {
     try {
       const fetch = (await import("node-fetch")).default;
-      await fetch(`https://${process.env.RENDER_EXTERNAL_URL || "tuapp.onrender.com"}/ping`);
+      await fetch(`https://${process.env.RENDER_EXTERNAL_URL || "avionesrusosmilitaresair.onrender.com"}/ping`);
       console.log("🔁 Ping enviado a Render");
     } catch (err) {
       console.log("Ping fallido:", err.message);
     }
-  }, 240000); // 4 minutos
+  }, 240000);
 }
