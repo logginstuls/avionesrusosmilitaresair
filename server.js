@@ -80,6 +80,47 @@ app.get("/api/messages", (req, res) => {
 });
 
 // ======================================================
+// ✏️ Renombrar sesión
+// ======================================================
+app.post("/api/rename-session", (req, res) => {
+  const { sessionId, newName } = req.body;
+  if (!sessionId || !newName) {
+    return res.status(400).json({ success: false, message: "Faltan datos" });
+  }
+
+  // Guardar el nombre dentro del objeto de sesión
+  if (!sessions[sessionId]) {
+    return res.status(404).json({ success: false, message: "Sesión no encontrada" });
+  }
+
+  if (!sessions[sessionId].meta) sessions[sessionId].meta = {};
+  sessions[sessionId].meta.name = newName;
+  console.log(`✏️ Sesión ${sessionId} renombrada a "${newName}"`);
+
+  return res.json({ success: true, message: "Sesión renombrada correctamente" });
+});
+
+// ======================================================
+// 🗑️ Eliminar sesión
+// ======================================================
+app.post("/api/delete-session", (req, res) => {
+  const { sessionId } = req.body;
+  if (!sessionId) {
+    return res.status(400).json({ success: false, message: "Falta sessionId" });
+  }
+
+  if (!sessions[sessionId]) {
+    return res.status(404).json({ success: false, message: "Sesión no encontrada" });
+  }
+
+  delete sessions[sessionId];
+  console.log(`🗑️ Sesión eliminada: ${sessionId}`);
+
+  return res.json({ success: true, message: "Sesión eliminada correctamente" });
+});
+
+
+// ======================================================
 // 🚀 Inicializar servidor
 // ======================================================
 const PORT = process.env.PORT || 10000;
