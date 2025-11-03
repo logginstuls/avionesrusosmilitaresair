@@ -9,27 +9,46 @@ let messages = [];
 let lastId = 0;
 
 // 🟢 Endpoint para recibir mensajes del cliente
+// ✅ Enviar mensaje (de cliente o agente)
 app.post("/api/send", (req, res) => {
-  const { sender, text } = req.body;
-  if (!sender || !text) {
-    return res.status(400).json({ success: false, message: "Faltan datos" });
+  const { sender, text, sessionId } = req.body;
+  if (!sender || !text || !sessionId) {
+    return res.status(400).json({ success: false, message: "Faltan datos o sessionId" });
   }
+
+  // Si la sesión no existe, se crea
+  if (!sessions[sessionId]) sessions[sessionId] = [];
 
   const newMessage = {
     id: ++lastId,
     sender,
     text,
-    timestamp: new Date(),
+    timestamp: new Date().toISOString(),
   };
 
-  messages.push(newMessage);
-  console.log("💬 Nuevo mensaje recibido:", newMessage);
+  sessions[sessionId].push(newMessage);
+  console.log(`💬 [${sessionId}] ${sender}: ${text}`);
+
   res.json({ success: true });
 });
 
+// ✅ Obtener mensajes de una sesión específica
+app.post("/api/messages", (req, res) => {
+  const { sessionId } = req.body;
+  if (!sessionId) return res.status(400).json({ success: false, message: "Falta sessionId" });
+
+  const chatMessages = sessions[sessionId] || [];
+  res.json({ success: true, messages: chatMessages });
+});
+
+
 // 🟢 Endpoint para obtener todos los mensajes
-app.get("/api/messages", (req, res) => {
-  res.json({ success: true, messages });
+app.post("/api/messages", (req, res) => {
+  const { sessionId } = req.body;
+  if (!sessionId) return res.status(400).json({ success: false, message: "Falta sessionId" });
+
+  const chatMessages = sessions[sessionId] || [];
+  res.json({ success: true, messages: chatMessages });
 });
 
 // 🟢 Endpoint para evitar que Render se duerma
